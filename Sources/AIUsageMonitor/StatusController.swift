@@ -193,15 +193,15 @@ final class StatusController: NSObject, NSApplicationDelegate, NSMenuDelegate {
         plain += "·"
     }
 
-    /// The provider's brand mark, template-rendered so it follows the system
-    /// light/dark appearance and never fights the menu bar. Loaded once.
+    /// The provider's brand mark in its own colors — Claude's terracotta, the
+    /// OpenAI knot in ChatGPT green — so the two read at a glance and on both
+    /// light and dark menu bars. Loaded once.
     private func icon(for kind: ProviderKind) -> NSImage? {
         if let cached = iconCache[kind] { return cached }
         guard
             let url = Bundle.main.url(forResource: kind.iconResourceName, withExtension: "png"),
             let image = NSImage(contentsOf: url)
         else { return nil }
-        image.isTemplate = true
         iconCache[kind] = image
         return image
     }
