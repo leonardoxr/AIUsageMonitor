@@ -1,9 +1,9 @@
 # AI Usage Monitor
 
 A macOS menu bar app that shows how much of your **Claude** and **Codex**
-subscription quotas is spent, before the next turn silently stops running.
+subscription quotas is spent — before the next turn silently stops running.
 
-![Menu bar excerpt](assets/menu-bar.png)
+![Menu bar](assets/menu-bar.png)
 
 ## Why
 
@@ -11,59 +11,54 @@ subscription quotas is spent, before the next turn silently stops running.
   nothing against the plan, so the numbers keep refreshing even after a limit
   is reached — which is exactly when they matter.
 - **Extremely light.** Native Swift/AppKit. No Electron, no Node, no web view,
-  no polling loop that repaints. Idle cost is one coalesced timer wake per
-  interval; the menu is only built while it is open.
+  and no polling loop that repaints: one coalesced timer wake per refresh
+  interval, and the menu is only built while it is open.
 
 ## Requirements
 
-- macOS 14+
-- Xcode Command Line Tools (`xcode-select --install`) — Swift 6
-- The `claude` and/or `codex` CLIs installed and **signed in to a subscription
-  plan** (API keys have no plan quota and are reported as unsigned)
+- macOS 14 or later (Apple Silicon and Intel)
+- The `claude` and/or `codex` CLIs installed and **signed in to a
+  subscription plan**. API-key logins have no plan quota and are reported as
+  unsigned.
 
 ## Install
 
+1. Download `AIUsageMonitor-x.x.x.zip` from the
+   [latest release](https://github.com/leonardoxr/AIUsageMonitor/releases/latest).
+2. Unzip and move the app to your Applications folder.
+
+The app is ad-hoc signed (no Developer ID), so the first launch is blocked by
+Gatekeeper. Open it once with **right-click → Open → Open**, or clear the
+quarantine flag:
+
 ```bash
-make install
+xattr -dr com.apple.quarantine /Applications/AIUsageMonitor.app
 ```
 
-That builds `dist/AIUsageMonitor.app`, copies it to `/Applications`, and opens
-it. Build and ad-hoc sign only — sharing the app with another Mac needs a
-Developer ID identity (`CODESIGN_IDENTITY=… make app`).
+Then launch it — it lives in the menu bar, with no Dock tile.
 
 ## Use
 
-The menu bar shows each provider's brand mark next to its binding percentage:
-the window closest to stopping the next turn (Claude's five-hour session or
+The menu bar shows each provider's mark next to its binding percentage: the
+window closest to stopping the next turn (Claude's five-hour session or
 weekly, Codex's weekly). Past 90% the figure turns red.
 
 Click for the full menu:
 
 - every rolling window as a bar (`████░░░░░░  51%  5 hour · resets in 2h 10m`)
 - per-model allowances (e.g. Codex Spark) kept apart from the plan quota
-- **Refresh Now** (`⌘R`), refresh interval (5/10/30 min), **Launch at Login**
-- **Quit** (`⌘Q`)
+- **Refresh Now** (⌘R), refresh interval (5/10/30 min), **Launch at Login**
+- **Quit** (⌘Q)
 
-The stored Claude password is read, never written — refreshing an expired
-login is Claude Code's job, and the menu tells you to run `claude` again when
-it is stale.
+The stored Claude login is read, never written — refreshing an expired login
+is Claude Code's own job, and the menu tells you to run `claude` when the
+credential is stale.
 
-## Without the menu bar
+## Limitations
 
-```bash
-make probe          # print one snapshot and exit (~20 s, Codex spawn included)
-```
-
-## Development
-
-```bash
-make build          # swift build
-make test           # 14 parser + formatting tests against captured payloads
-make app            # assemble + ad-hoc sign dist/AIUsageMonitor.app
-```
-
-`Sources/UsageCore` has no AppKit and is fully unit-tested; the AppKit shell
-in `Sources/AIUsageMonitor` is deliberately thin. Quota mechanics came from
-[T3 Code](https://github.com/t3dotgg/t3code)'s `SubscriptionUsageService` (see
-`docs/internals/providers.md` there) and were re-verified by hand before any
-Swift was written.
+- Quota figures move in hours, not seconds: the default 10-minute refresh
+  (5/10/30 min options) matches how the windows actually change.
+- Codex reports a plan quota only for ChatGPT-plan logins; API-key and
+  Bedrock logins bill per token and are shown as unsigned.
+- Both CLIs must be reachable; a missing binary or a failed request shows as
+  unavailable rather than a guessed number.
